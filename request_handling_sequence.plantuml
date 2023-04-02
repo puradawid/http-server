@@ -1,0 +1,54 @@
+@startuml
+
+header 200 Response
+title Handling Request
+
+actor User
+
+User->Server : Server(8080)
+User->Server : listen()
+
+Server->ConnectionFactory : createConnection(8080)
+ConnectionFactory->Connection : new(RequestReader, RequestDispatcher)
+loop
+    Connection -> Connection : waitForMessage()
+    Connection -> RequestDispatcher : read(Message)
+    RequestDispatcher -> SomeParser : digest(Message)
+    SomeParser -> HttpParser : digest(Message)
+    alt next required
+        HttpParser --> SomeParser : next_one
+        SomeParser --> RequestDispatcher : next_one
+    end
+    alt first step done
+        HttpParser -> HeadersParser : digest(Message)
+        alt next message required
+            HeadersParser --> HttpParser : next_one
+            HttpParser --> SomeParser : next_one
+        SomeParser --> RequestDispatcher : next_one
+        end 
+        alt second step done
+            HeadersParser -> BodyParser : digest(Message)
+        end
+    end
+    SomeParser -> RequestDispatcher : notYetFinished
+end
+
+alt error in parsing
+    SomeParser --> RequestDispatcher : incorrect format
+    RequestDispatcher --> Connection : close() 
+end
+
+SomeParser --> RequestDispatcher : done + Request
+
+loop until false
+    RequestDispatcher -> Handler : path(request.path)
+    Handler --> RequestDispatcher : false | true
+end
+
+RequestDispatcher -> RealHandler : handle(Request)
+RealHandler --> RequestDispatcher : Response
+
+RequestDispatcher -> Connection : send(std::string)
+RequestDispatcher -> Connection : close()
+
+@enduml

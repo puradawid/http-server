@@ -1,0 +1,202 @@
+@startuml "implementation"
+
+left to right direction
+
+title HTTP Server - class diagram
+
+interface Connection
+
+Connection : readMessage(): MessageChunk
+Connection : write(Serializable)
+Connection : close()
+
+class MessageChunk
+MessageChunk : message: std::string
+
+MessageChunk --> Parser
+
+class PreambleChunk
+PreambleChunk : type: RequestType
+PreambleChunk : path: std::string
+
+PreambleChunk -|> MessageChunk
+
+class HeadersChunk
+HeadersChunk : Headers
+
+HeadersChunk -|> PreambleChunk
+
+class TcpPortListener
+TcpPortListener : port: int
+TcpPortListener --|> PortListener
+TcpPortListener : connectionDescription: sockfd
+
+class TcpConnection
+TcpConnection : socketDescriptor: sockfd
+TcpConnection -|> Connection
+
+class TestPortListener
+TestPortListener : testMessage: std::string
+TestPortListener : replied(): Message
+
+TestPortListener -|> PortListener
+
+class TestConnection
+TestConnection : replied(): Message
+
+TestConnection -|> Connection
+
+interface IncomingConnectionObserver
+IncomingConnectionObserver : onOpenedConnection(Connection)
+
+interface PortListener
+PortListener : registerObserver(IncomingConnectionObserver*)
+PortListener : unregisterObserver(IncomingConnectionObserver*)
+PortListener : listen()
+PortListener : close()
+
+Connection <-- PortListener : creates
+PortListener <-- Dispatcher : observers
+
+class Request
+Request : code: std::string
+Request : headers: Headers
+Request : isUnder(std:string): bool
+Request : query(): std::list<std::pair<std::string, std::string>>
+Request : hash(): std::string
+Request : createEmptyResponse(): Response
+Request : createError(int code, std:string errorMsg): Response
+
+class Headers
+Headers : elements: std::map<Name, Header>
+Headers : find(name: std::string): Header
+Headers : addHeader(Header)
+Headers : removeHeader(Header)
+Headers : removeHeaders(std::string name)
+
+class "Header" as http_header
+http_header : name : std::string
+http_header : values : std::list<std::string>
+http_header : changeValues(std::list<std::string>): Header
+http_header : changeValue(std::string)): Header
+http_header -|> Serializable
+
+Headers "1" o-- "1..*" http_header
+Headers "1" --o "1" Request
+Headers -|> Serializable
+
+abstract Message
+Message : headers: Headers
+Message : body: std::string
+Message : getHeaders() : Headers
+Message : getBody() : std::string
+Message : setBody(Body)
+
+Message <|-- Request
+Message <|-- Response
+
+enum RequestType
+RequestType : GET
+RequestType : POST
+RequestType : PUT
+RequestType : DELETE
+RequestType : OPTIONS
+
+Request -- RequestType
+
+Request : type: RequestType
+
+Response : code: Code
+Response : headers: Headers
+Response : body(std::string)
+
+Server : port: int
+Server : address : std::string
+Server : run(): void
+Server : registerHandler(Handler*): int
+Server : unregisterHandler(Handler*)
+Server : stop()
+
+class Dispatcher
+Dispatcher : handlers: std::list<Handler>
+Dispatcher : parser : Parser<MessageChunk>
+Dispatcher : dispatch(Request): Response
+Dispatcher --|> IncomingConnectionObserver
+
+Server --> PortListener : initializes
+Server --> Dispatcher : configures
+
+interface "Handler<R Request>" as handler_request
+handler_request : handle(R): Response
+handler_request : pathToTest(std:string): bool
+Dispatcher o-- handler_request
+
+abstract "Parser<T: Message>" as Parser
+Parser : continue : Continue
+Parser : digest(T): Continue
+Parser : {abstract} construct(T)
+Parser : build(): Request
+
+note "Each parser instance calls the next one\nwhen it's ready for next stage" as parser_note
+
+parser_note -- Parser
+
+interface "Serializable<T: Message>" as Serializable
+Serializable : serialize(): std:string
+
+Serializable <|- Request
+Serializable <|- Response
+
+struct Continue
+Continue : status: int
+Continue : error_msg: std::string
+
+class "PreambleParser<MessageChunk>" as PreambleParser
+PreambleParser : message: HttpMessage
+PreambleParser : next: HeadersParser
+PreambleParser : construct(Message):Message
+PreambleParser -|> Parser
+
+class "HeadersParser<PreambleChunk>" as HeadersParser
+HeadersParser : message: HeadersMessage
+HeadersParser : next : BodyParser
+HeadersParser : construct(Preamble): Headers 
+HeadersParser -|> Parser
+
+class "BodyParser<HeadersChunk>" as BodyParser
+BodyParser : message: Body
+BodyParser : construct(Preamble): Body
+BodyParser -|> Parser
+
+interface LoggerFactory
+LoggerFactory : create(name: std::string): Logger
+
+interface Logger
+Logger : error(std::string)
+Logger : warn(std::string)
+Logger : debug(std::string)
+
+class StdoutLoggerFactory
+StdoutLoggerFactory : pattern: std::string
+
+StdoutLoggerFactory --|> LoggerFactory
+
+class FileLoggerFactory
+FileLoggerFactory : std::file
+
+class HybridLoggerFactory
+HybridLoggerFactory : factories : std::map<string, LoggerFactory*>
+
+HybridLoggerFactory --|> LoggerFactory
+
+FileLoggerFactory --|> LoggerFactory
+
+StdoutLogger -|> Logger
+FileLogger -|> Logger
+
+Logger <-- LoggerFactory : creates
+
+note "This can be used in every place of code,\n implements singleton pattern" as logger_note
+LoggerFactory -- logger_note
+
+@enduml
