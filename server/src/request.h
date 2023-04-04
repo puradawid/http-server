@@ -18,10 +18,12 @@ public:
     Request();
     Request(std::string method);
     Request(Method method);
+    Request(Method method, std::string path, Headers headers);
     Method method();
     void path(std::string path);
     std::string path();
     std::string header(std::string name);
+    Headers headers();
 };
 
 #endif

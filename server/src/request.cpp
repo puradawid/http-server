@@ -20,6 +20,13 @@ Request::Request(Method m) {
     this->mMethod = m;
 }
 
+Request::Request(Method method, std::string path, Headers headers)
+{
+    this->mPath = path;
+    this->mMethod = method;
+    this->mHeaders = headers;
+}
+
 void Request::path(std::string path) {
     this->mPath = path;
 }
@@ -40,4 +47,9 @@ std::string Request::header(std::string name) {
     {
         return "";
     }
+}
+
+Headers Request::headers()
+{
+    return this->mHeaders;
 }

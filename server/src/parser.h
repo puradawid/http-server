@@ -17,6 +17,15 @@ struct Continue {
     }
 };
 
+class Cache {
+private:
+    std::string mLastMsg;
+public:
+    Cache();
+    void store(std::string message);
+    std::string restore(std::string message);
+};
+
 class MessageChunk {
 protected:
     std::string mMessage;
@@ -56,6 +65,7 @@ private:
     std::regex preamble;
     std::string mPath;
     Request mRequest;
+    Parser<PreambleChunk, Request>* mHeadersParser;
     bool done;
 protected:
     Request construct();
@@ -64,4 +74,14 @@ public:
     HttpParser();
 };
 
+class HeadersParser: public Parser<PreambleChunk, Request> {
+private:
+    Headers mHeaders;
+    Cache mCache;
+protected:
+    Request construct();
+    Continue read(PreambleChunk chunk);
+public:
+    HeadersParser();
+};
 #endif

@@ -67,8 +67,6 @@ BOOST_AUTO_TEST_CASE(shouldHandleEmptyHttpPostRequest)
 BOOST_AUTO_TEST_CASE(shouldHandlePathPostRequest)
 {
     std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\n\n";
-    std::list<MessageChunk> messages = createChunks(request);
-
     HttpParser parser;
 
     parser.digest(request);
@@ -81,8 +79,6 @@ BOOST_AUTO_TEST_CASE(shouldHandlePathPostRequest)
 BOOST_AUTO_TEST_CASE(shouldStopAfterCompleteRequest)
 {
     std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\n\n";
-    std::list<MessageChunk> messages = createChunks(request);
-
     HttpParser parser;
 
     Continue c = parser.digest(request);
@@ -93,15 +89,27 @@ BOOST_AUTO_TEST_CASE(shouldStopAfterCompleteRequest)
 BOOST_AUTO_TEST_CASE(shouldParseTheOnlyHeader)
 {
     std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\nHost: test.com\n\n";
-    std::list<MessageChunk> messages = createChunks(request);
 
     HttpParser parser;
 
-    parser.digest(request);
+    parser.digest(PreambleChunk(request, Method::GET, "/"));
 
     Request r = parser.build();
 
-    BOOST_CHECK(r.header("Host") == "test.com");
+    BOOST_TEST(r.header("Host") == "test.com", r.header("Host") + " is not test.com");
+}
+
+BOOST_AUTO_TEST_CASE(HeadersParsing)
+{
+    std::string request = "Host: test.com\n\n";
+
+    HeadersParser parser;
+
+    parser.digest(PreambleChunk(request, Method::GET, "/"));
+
+    Request r = parser.build();
+
+    BOOST_TEST(r.header("Host") == "test.com", r.header("Host") + " is not test.com");
 }
 
 BOOST_AUTO_TEST_SUITE_END();
