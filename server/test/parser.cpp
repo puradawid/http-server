@@ -37,23 +37,27 @@ BOOST_AUTO_TEST_CASE(shouldCreateMessageWithCharPointer)
 
 BOOST_AUTO_TEST_CASE(shouldHandleRealHttpRequest)
 {
-    std::string request = "GET / HTTP/1.1\nHost: localhost:1231\nUser-Agent: curl/7.81.0\nAccept: */*\nreport-to: {\"group\":\"gwsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-team\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws-team\"}]}\n\n";
+    std::string request = "GET / HTTP/1.1\r\nHost: localhost:1231\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\nreport-to: {\"group\":\"gwsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-team\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws-team\"}]}\r\nX-Test: true\r\n\r\n";
     std::list<MessageChunk> messages = createChunks(request);
 
     HttpParser parser;
+    Continue c = 0;
 
     for (MessageChunk s : messages) {
-        Continue c = parser.digest(s);
-        BOOST_CHECK(c.continueProcessing);
+        c = parser.digest(s);
     }
+
+    BOOST_CHECK(c.continueProcessing  == false);
 
     Request r = parser.build();
     BOOST_CHECK(r.method() == Method::GET);
+    BOOST_TEST(r.header("Accept") == "*/*", "Header Accept is " + r.header("Accept") + " instead of \"*/*\"");
+    BOOST_TEST(r.header("X-Test") == "true", "Header X-Test is " + r.header("Accept") + " instead of \"true\"");
 }
 
 BOOST_AUTO_TEST_CASE(shouldHandleEmptyHttpPostRequest)
 {
-    std::string request = "POST / HTTP/1.1\n\n";
+    std::string request = "POST / HTTP/1.1\r\n\r\n";
     std::list<MessageChunk> messages = createChunks(request);
 
     HttpParser parser;
@@ -66,7 +70,7 @@ BOOST_AUTO_TEST_CASE(shouldHandleEmptyHttpPostRequest)
 
 BOOST_AUTO_TEST_CASE(shouldHandlePathPostRequest)
 {
-    std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\n\n";
+    std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\r\n\r\n";
     HttpParser parser;
 
     parser.digest(request);
@@ -78,7 +82,7 @@ BOOST_AUTO_TEST_CASE(shouldHandlePathPostRequest)
 
 BOOST_AUTO_TEST_CASE(shouldStopAfterCompleteRequest)
 {
-    std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\n\n";
+    std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\r\n\r\n";
     HttpParser parser;
 
     Continue c = parser.digest(request);
@@ -88,7 +92,7 @@ BOOST_AUTO_TEST_CASE(shouldStopAfterCompleteRequest)
 
 BOOST_AUTO_TEST_CASE(shouldParseTheOnlyHeader)
 {
-    std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\nHost: test.com\n\n";
+    std::string request = "POST /this-is-my/path?q=123123 HTTP/1.1\r\nHost: test.com\r\n\r\n";
 
     HttpParser parser;
 
@@ -101,7 +105,7 @@ BOOST_AUTO_TEST_CASE(shouldParseTheOnlyHeader)
 
 BOOST_AUTO_TEST_CASE(HeadersParsing)
 {
-    std::string request = "Host: test.com\n\n";
+    std::string request = "Host: test.com\r\n\r\n";
 
     HeadersParser parser;
 
@@ -110,6 +114,7 @@ BOOST_AUTO_TEST_CASE(HeadersParsing)
     Request r = parser.build();
 
     BOOST_TEST(r.header("Host") == "test.com", r.header("Host") + " is not test.com");
+    BOOST_TEST(r.header("host") == "test.com", r.header("host") + " is not test.com");
 }
 
 BOOST_AUTO_TEST_SUITE_END();

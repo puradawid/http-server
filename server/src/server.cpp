@@ -10,7 +10,17 @@ Server::Server(int port) {
 };
 
 void Server::start() {
-    Connection c(this->port);
+    TcpConnection c(this->port);
     c.open();
     c.listen();
+    
+    HttpParser p;
+    Continue more(true);
+    while(more.continueProcessing) {
+        MessageChunk chunk = c.read();
+        more = p.digest(chunk);
+    }
+    Request r = p.build();
+    std::cout << r.header("accept") << std::endl;
+    c.close();
 }

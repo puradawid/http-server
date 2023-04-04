@@ -38,8 +38,8 @@ Continue HttpParser::read(MessageChunk chunk)
     {
         this->done = true;
         std::string message = chunk.message();
-        std::string firstLine = message.substr(0, message.find('\n'));
-        std::string rest = message.substr(message.find('\n') + 1);
+        std::string firstLine = message.substr(0, message.find("\r\n"));
+        std::string rest = message.substr(message.find("\r\n") + 2);
         std::smatch match;
         std::regex_match(firstLine, match, this->preamble);
         if (!match.ready() || match.empty())
@@ -53,7 +53,7 @@ Continue HttpParser::read(MessageChunk chunk)
             mPath = match[2].str();
         }
 
-        if (rest == "\n\n") // end of request - no headers 
+        if (rest == "\r\n\r\n") // end of request - no headers 
         {
             return Continue(false);
         }
@@ -99,16 +99,16 @@ Request HeadersParser::construct()
 Continue HeadersParser::read(PreambleChunk chunk)
 {
     std::string left = this->mCache.restore(chunk.message());
-    while (left != "\n") 
+    while (left != "\r\n") 
     {
-        std::string headerInput = left.substr(0, left.find_first_of('\n'));
+        std::string headerInput = left.substr(0, left.find("\r\n"));
         std::smatch match;
         std::regex_match(headerInput, match, header);
         if (match.ready() && !match.empty()) {
             this->mHeaders.addHeader(Header(match[1].str(), match[2].str()));
-            left = left.substr(left.find_first_of('\n') + 1);
-            if (left.find('\n') > 0) // there is more to come - continue
-            {
+            if (left.find("\r\n") != std::string::npos) {
+                left = left.substr(left.find("\r\n") + 2);
+            } else {
                 this->mCache.store(left);
                 return Continue(true);
             }
@@ -118,7 +118,7 @@ Continue HeadersParser::read(PreambleChunk chunk)
         }
     }
 
-    if (left != "\n") {
+    if (left != "\r\n") {
         this->mCache.store(left);
         return Continue(true);
     }

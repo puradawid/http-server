@@ -10,7 +10,7 @@
 
 #include <iostream>
 
-Connection::Connection(int port) {
+TcpConnection::TcpConnection(int port) {
     this->port = port;
 };
 
@@ -18,49 +18,40 @@ void error(std::string msg) {
     std::cout << msg << std::endl;
 };
 
-void Connection::listen() {
+void TcpConnection::listen() {
     struct sockaddr_in cli_addr;
     socklen_t clilen;
-    int newsockfd;
-    char buffer[512];
     // 5 connections tops for this one
-    ::listen(sockfd,5);
+    ::listen(this->sockfd,5);
 
     clilen = sizeof(cli_addr);
-    newsockfd = accept(sockfd, 
+    this->newsockfd = accept(this->sockfd, 
                  (struct sockaddr *) &cli_addr, 
                  &clilen);
-    if (newsockfd < 0) 
+    if (this->newsockfd < 0) 
         error("ERROR on accept");
+}
+MessageChunk TcpConnection::read()
+{
+    char buffer[512];
     bzero(buffer,512);
 
-    int n;
-    do { 
-        n = read(newsockfd,buffer,512);
-        if (n < 0) error("ERROR reading from socket");
-        printf("Here is the message: %s\n", buffer);
-        std::cout << n << " <- number" << std::endl;
-        //int errorCode = write(newsockfd,"I got your message\n",19);
-        //if (errorCode < 0) error("ERROR writing to socket");
-    } while (n > 0);
+    int n; 
+    n = ::read(this->newsockfd,buffer,512);
+    if (n < 0) error("ERROR reading from socket");
+    return MessageChunk(buffer, n);
+}
+void TcpConnection::write(Serializable s){};
 
-    std::cout << "Closing connection now" << std::endl;
-    ::shutdown(newsockfd, SHUT_RD);
-    ::close(newsockfd);
-    std::cout << "Closing server connection now" << std::endl;
-    ::shutdown(newsockfd, SHUT_RDWR);
-    ::close(this->sockfd);
-};
-
-void Connection::open() {
-    int sockfd, portno;
+void TcpConnection::open() {
+    int portno;
     struct sockaddr_in serv_addr;
     
     // get file descriptor for socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    this->sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     // if OS decided to not give a process socket
-    if (sockfd < 0) 
+    if (this->sockfd < 0) 
         error("ERROR opening socket");
     
     // clearing serv_addr
@@ -80,6 +71,11 @@ void Connection::open() {
     this->sockfd = sockfd;
 };
 
-void Connection::close() {
-
+void TcpConnection::close() {
+    std::cout << "Closing connection now" << std::endl;
+    ::shutdown(newsockfd, SHUT_RD);
+    ::close(newsockfd);
+    std::cout << "Closing server connection now" << std::endl;
+    ::shutdown(newsockfd, SHUT_RDWR);
+    ::close(this->sockfd);
 };

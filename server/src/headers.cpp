@@ -1,5 +1,13 @@
 #include "headers.h"
 
+std::string tolower(std::string input) {
+    std::string result = "";
+    for (char c : input) {
+        result += std::tolower(c);
+    }
+    return result;
+}
+
 Headers::Headers()
 {
     this->mHeaders = std::map<std::string, Header>();
@@ -7,27 +15,27 @@ Headers::Headers()
 
 Header Headers::find(std::string name)
 {
-    return this->mHeaders[name];
+    return this->mHeaders[tolower(name)];
 }
 
 void Headers::addHeader(Header header)
 {
-    this->mHeaders[header.name()] = header;
+    this->mHeaders[tolower(header.name())] = header;
 }
 
 void Headers::removeHeader(Header header)
 {
-    this->mHeaders.erase(header.name());
+    this->mHeaders.erase(tolower(header.name()));
 }
 
 void Headers::removeHeader(std::string name)
 {
-    this->mHeaders.erase(name);
+    this->mHeaders.erase(tolower(name));
 }
 
 bool Headers::contains(std::string name)
 {
-    return this->mHeaders.find(name) != this->mHeaders.end();
+    return this->mHeaders.find(tolower(name)) != this->mHeaders.end();
 }
 
 Header::Header()
