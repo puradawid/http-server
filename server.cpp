@@ -9,7 +9,6 @@ void run(Server* s) {
 }
 
 int main(int i, char** argv) {
-    std::cout << i;
     int port = i == 2 ? atoi(argv[1]) : 8080;
 
     Server s(port);
