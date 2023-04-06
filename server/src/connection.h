@@ -30,7 +30,7 @@ public:
 
 class IncomingConnectionObserver {
 public:
-    virtual void onOpenedConnection(Connection* conn) = 0;
+    virtual void onOpenedConnection(Connection& conn) = 0;
 };
 
 class PortListener {

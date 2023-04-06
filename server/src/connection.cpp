@@ -60,7 +60,7 @@ void TcpPortListener::unregisterObserver(IncomingConnectionObserver *observer)
 }
 
 void notify(Connection* conn, IncomingConnectionObserver* observer) {
-    observer->onOpenedConnection(conn);
+    observer->onOpenedConnection(*conn);
 }
 
 void listenThread(int sockfd, IncomingConnectionObserver* observer) {
@@ -77,7 +77,8 @@ void listenThread(int sockfd, IncomingConnectionObserver* observer) {
                     &clilen);
         if (newsockfd < 0) 
             error("ERROR on accept");
-        new std::thread(notify, new TcpConnection(newsockfd), observer);
+        TcpConnection tcp(newsockfd);
+        new std::thread(notify, &tcp, observer);
     }
 }
 
@@ -146,7 +147,7 @@ void TestPortListener::close() {
 void TestPortListener::send()
 {
     TestConnection t(this->mRequest);
-    this->mObserver->onOpenedConnection(&t);
+    this->mObserver->onOpenedConnection(t);
 }
 
 TestConnection::TestConnection(std::string request)
