@@ -28,7 +28,15 @@ MessageChunk TcpConnection::read()
     if (n < 0) error("ERROR reading from socket");
     return MessageChunk(buffer, n);
 }
-void TcpConnection::write(Serializable s){};
+void TcpConnection::write(Serializable& s){
+    std::string message = s.serialize();
+
+    ssize_t res = ::write(this->newsockfd, message.c_str(), message.length());
+    
+    if (res < 0) {
+        error("Message hasn't been sent");
+    }
+};
 
 void TcpConnection::close() {
     std::cout << "Closing connection now" << std::endl;
@@ -57,7 +65,7 @@ void notify(Connection* conn, IncomingConnectionObserver* observer) {
 
 void listenThread(int sockfd, IncomingConnectionObserver* observer) {
     
-    // 5 connections tops for this one
+    // 5 connections tops for this one TODO: should be configurable (at some point)
     ::listen(sockfd,5);
     socklen_t clilen;
     struct sockaddr_in cli_addr;
@@ -109,4 +117,62 @@ void TcpPortListener::close()
     std::cout << "Closing connection now" << std::endl;
     ::shutdown(this->mSockfd, SHUT_RD);
     ::close(this->mSockfd);
+}
+
+TestPortListener::TestPortListener(IncomingConnectionObserver *observer, std::string request)
+{
+    this->mObserver = observer;
+    this->mRequest = request;
+}
+
+void TestPortListener::registerObserver(IncomingConnectionObserver *observer)
+{
+    this->mObserver = observer;
+}
+
+void TestPortListener::unregisterObserver(IncomingConnectionObserver *observer)
+{
+    // unregistering not supported, but silently skipped
+}
+
+void TestPortListener::listen() {
+
+}
+
+void TestPortListener::close() {
+    
+}
+
+void TestPortListener::send()
+{
+    TestConnection t(this->mRequest);
+    this->mObserver->onOpenedConnection(&t);
+}
+
+TestConnection::TestConnection(std::string request)
+{
+    this->mRequest = request;
+    this->mClosed = false;
+}
+
+MessageChunk TestConnection::read()
+{
+    return MessageChunk(this->mRequest);
+}
+
+void TestConnection::write(Serializable& s)
+{
+    this->mResponse = s.serialize();
+}
+
+void TestConnection::close() {
+    this->mClosed = true;
+}
+
+std::string TestConnection::response() {
+    return this->mResponse;
+}
+
+bool TestConnection::closed() {
+    return this->mClosed;
 }

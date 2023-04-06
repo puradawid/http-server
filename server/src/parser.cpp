@@ -20,6 +20,11 @@ MessageChunk::MessageChunk(char *message, int length)
 std::string MessageChunk::message()
 {
     return this->mMessage;
+}
+
+std::string MessageChunk::serialize()
+{
+    return this->mMessage;
 };
 
 Request HttpParser::construct()

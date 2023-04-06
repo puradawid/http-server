@@ -19,7 +19,8 @@ class ConcreteObserver : public IncomingConnectionObserver {
             more = p.digest(chunk);
         }
         Request r = p.build();
-        std::cout << r.header("accept") << std::endl;
+        MessageChunk OK("HTTP/1.1 200 OK\r\n\r\n");
+        conn->write(&OK);
         conn->close();
     }
 

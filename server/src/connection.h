@@ -9,7 +9,7 @@
 class Connection {
 public:
     virtual MessageChunk read() = 0;
-    virtual void write(Serializable s) = 0;
+    virtual void write(Serializable& s) = 0;
     virtual void close() = 0;
 };
 
@@ -19,7 +19,7 @@ private:
 public:
     TcpConnection(int newsockfd);
     MessageChunk read();
-    void write(Serializable s);
+    void write(Serializable& s);
     void close();
 };
 
@@ -52,6 +52,39 @@ public:
     void unregisterObserver(IncomingConnectionObserver* observer);
     void listen();
     void close();
+};
+
+/// @brief a fake listener used for unit testing. Use send() when need to notify the observer
+class TestPortListener : public PortListener {
+private:
+    IncomingConnectionObserver* mObserver;
+    std::string mRequest;
+public:
+    /// @brief A fake port listener - sends a connection that can be validated for unit testing
+    /// @param mObserver observer that is getting notified
+    /// @param request a message put in MessageChunk that is sent through the created TestConnection
+    TestPortListener(IncomingConnectionObserver* mObserver, std::string request);
+    void registerObserver(IncomingConnectionObserver* observer);
+    void unregisterObserver(IncomingConnectionObserver* observer);
+    void listen();
+    void close();
+
+    /// @brief this method triggers notification of observer with incoming message
+    void send();
+};
+
+class TestConnection : public Connection {
+private:
+    std::string mResponse;
+    std::string mRequest;
+    bool mClosed;
+public:
+    TestConnection(std::string request);
+    MessageChunk read();
+    void write(Serializable& s);
+    void close();
+    std::string response();
+    bool closed();
 };
 
 #endif

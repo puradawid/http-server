@@ -3,6 +3,7 @@
 
 #include <string>
 #include "request.h"
+#include "serializable.h"
 #include <regex>
 
 struct Continue {
@@ -26,13 +27,14 @@ public:
     std::string restore(std::string message);
 };
 
-class MessageChunk {
+class MessageChunk : public Serializable {
 protected:
     std::string mMessage;
 public:
     MessageChunk(char* message, int length);
     MessageChunk(std::string message);
     std::string message();
+    std::string serialize();
 };
 
 class PreambleChunk : public MessageChunk {
