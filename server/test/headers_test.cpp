@@ -23,4 +23,24 @@ BOOST_AUTO_TEST_CASE(HeadersShouldReturnAValueIfAdded)
     BOOST_CHECK(h.find("random").value() == "value");
 };
 
+BOOST_AUTO_TEST_CASE(HeaderShouldSerializeToHttpHeader)
+{
+    Header random("Random", "value");
+
+    BOOST_CHECK(random.serialize() == "Random: value");
+};
+
+BOOST_AUTO_TEST_CASE(HeadersShouldSerializeToHttpHeaders)
+{
+    Header random("Random", "value");
+    Header nextRandom("Next-Random", "next random value");
+
+    Headers h;
+
+    h.addHeader(random);
+    h.addHeader(nextRandom);
+
+    BOOST_TEST(h.serialize() == "Next-Random: next random value\r\nRandom: value\r\n\r\n");
+};
+
 BOOST_AUTO_TEST_SUITE_END();

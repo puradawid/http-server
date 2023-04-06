@@ -9,28 +9,15 @@ Server::Server(int port) {
     this->port = port;
 };
 
-class ConcreteObserver : public IncomingConnectionObserver {
-
-    void onOpenedConnection(Connection& conn) {
-        HttpParser p;
-        Continue more(true);
-        while(more.continueProcessing) {
-            MessageChunk chunk = conn.read();
-            more = p.digest(chunk);
-        }
-        Request r = p.build();
-        MessageChunk OK("HTTP/1.1 200 OK\r\n\r\n");
-        conn.write(OK);
-        conn.close();
-    }
-
-};
-
 void Server::start() {
     TcpPortListener tcpListener(this->port);
-    ConcreteObserver co;
 
-    tcpListener.registerObserver(&co);
+    tcpListener.registerObserver(&(this->mDispatcher));
 
     tcpListener.listen();
+}
+
+void Server::registerHandler(std::shared_ptr<Handler> h)
+{
+    this->mDispatcher.add(h);
 }

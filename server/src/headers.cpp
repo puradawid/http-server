@@ -38,6 +38,17 @@ bool Headers::contains(std::string name)
     return this->mHeaders.find(tolower(name)) != this->mHeaders.end();
 }
 
+std::string Headers::serialize()
+{
+    std::string result;
+
+    for (std::pair<std::string, Header> header : this->mHeaders) {
+        result += header.second.serialize() + "\r\n";
+    }
+
+    return result + "\r\n";
+}
+
 Header::Header()
 {
     this->mName = "";
@@ -80,4 +91,9 @@ std::string Header::value()
 std::list<std::string> Header::values()
 {
     return this->mValues;
+}
+
+std::string Header::serialize()
+{
+    return this->mName + ": " + this->mValues.front();
 }

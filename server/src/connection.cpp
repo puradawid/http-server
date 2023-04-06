@@ -1,4 +1,5 @@
 #include "connection.h"
+#include "logger.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,8 @@
 #include <netinet/in.h>
 
 #include <iostream>
+
+Logging::Logger& TcpConnection::LOG = Logging::LOG.getLogger("TcpConnection");
 
 TcpConnection::TcpConnection(int newsockfd) {
     this->newsockfd = newsockfd;
@@ -23,11 +26,13 @@ MessageChunk TcpConnection::read()
     char buffer[512];
     bzero(buffer,512);
 
-    int n; 
+    int n;
     n = ::read(this->newsockfd,buffer,512);
+    TcpConnection::LOG.debug("Received " + std::to_string(n) + " characters");
     if (n < 0) error("ERROR reading from socket");
     return MessageChunk(buffer, n);
 }
+
 void TcpConnection::write(Serializable& s){
     std::string message = s.serialize();
 
@@ -38,8 +43,9 @@ void TcpConnection::write(Serializable& s){
     }
 };
 
+
 void TcpConnection::close() {
-    std::cout << "Closing connection now" << std::endl;
+    TcpConnection::LOG.debug("Closing connection");
     ::shutdown(this->newsockfd, SHUT_RD);
     ::close(this->newsockfd);;
 };
@@ -63,6 +69,8 @@ void notify(Connection* conn, IncomingConnectionObserver* observer) {
     observer->onOpenedConnection(*conn);
 }
 
+Logging::Logger& listenThreadLogger = Logging::LOG.getLogger("listenThread");
+
 void listenThread(int sockfd, IncomingConnectionObserver* observer) {
     
     // 5 connections tops for this one TODO: should be configurable (at some point)
@@ -77,6 +85,7 @@ void listenThread(int sockfd, IncomingConnectionObserver* observer) {
                     &clilen);
         if (newsockfd < 0) 
             error("ERROR on accept");
+        listenThreadLogger.debug("Connection opened, sockfd: " + std::to_string(newsockfd));
         TcpConnection tcp(newsockfd);
         new std::thread(notify, &tcp, observer);
     }
@@ -144,10 +153,11 @@ void TestPortListener::close() {
     
 }
 
-void TestPortListener::send()
+std::string TestPortListener::send()
 {
     TestConnection t(this->mRequest);
     this->mObserver->onOpenedConnection(t);
+    return t.response();
 }
 
 TestConnection::TestConnection(std::string request)

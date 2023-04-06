@@ -12,9 +12,8 @@ MessageChunk::MessageChunk(std::string message)
     this->mMessage = message;
 };
 
-MessageChunk::MessageChunk(char *message, int length)
+MessageChunk::MessageChunk(char *message, int length) : MessageChunk(std::string(message, length))
 {
-    this->mMessage = std::string(message, length);
 }
 
 std::string MessageChunk::message()
@@ -35,6 +34,9 @@ Request HttpParser::construct()
 
 Continue HttpParser::read(MessageChunk chunk)
 {
+    if (chunk.message().length() == 0) {
+        return Continue("empty message received");
+    }
     if (this->done)
     {
         return this->mHeadersParser->digest(PreambleChunk(chunk.message(), this->mMethod, this->mPath));

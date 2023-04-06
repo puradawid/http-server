@@ -1,10 +1,11 @@
 #ifndef CONNECTION_H
-#define CONNECTION
+#define CONNECTION_H
 
 #include <string>
 #include <thread>
 #include "parser.h"
 #include "serializable.h"
+#include "logger.h"
 
 class Connection {
 public:
@@ -15,6 +16,7 @@ public:
 
 class TcpConnection : public Connection {
 private:
+    static Logging::Logger& LOG;
     int newsockfd;
 public:
     TcpConnection(int newsockfd);
@@ -70,7 +72,7 @@ public:
     void close();
 
     /// @brief this method triggers notification of observer with incoming message
-    void send();
+    std::string send();
 };
 
 class TestConnection : public Connection {

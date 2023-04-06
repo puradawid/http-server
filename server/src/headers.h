@@ -5,8 +5,10 @@
 #include <list>
 #include <map>
 
+#include "serializable.h"
+
 /// @brief represents a single header (name: value) with additional functions for alternating it.
-class Header {
+class Header : Serializable {
 private:
     std::string mName;
     std::list<std::string> mValues;
@@ -45,12 +47,14 @@ public:
     /// @brief returns a list of values
     /// @return copy of the value list
     std::list<std::string> values();
+
+    std::string serialize();
 };
 
 const Header EMPTY_HEADER = Header("", "");
 
 /// @brief represents headers of a message
-class Headers {
+class Headers : Serializable {
 private:
     std::map<std::string, Header> mHeaders;
 public:
@@ -78,6 +82,8 @@ public:
     /// @param name name of the header (case insensitive)
     /// @return true if the header exists in the collection (so that find returns not EMPTY_HEADER value), false otherwise
     bool contains(std::string name);
+
+    std::string serialize();
 };
 
 #endif

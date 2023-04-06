@@ -7,13 +7,15 @@
 /// @brief interface that provides handling for requests/response
 class Handler {
 public:
-    virtual Response handle(Request request) = 0;
+    virtual Response handle(Request& request) = 0;
+    virtual bool test(Request& request) = 0;
 };
 
 class Dispatcher : public IncomingConnectionObserver {
 private:
-    std::list<std::pair<std::string, Handler&>> handlers;
+    std::list<std::shared_ptr<Handler>> mHandlers;
 public:
+    void add(std::shared_ptr<Handler> handler);
     void onOpenedConnection(Connection& conn);
 };
 
