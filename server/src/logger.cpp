@@ -30,7 +30,7 @@ void BaseLogger::error(std::string message)
         this->write("error", message);
 }
 
-Logging::BaseLogger::BaseLogger(LogLevel level, std::string name) : name(name), level(level) { }
+Logging::BaseLogger::BaseLogger(LogLevel level, std::string name) : level(level), name(name) { }
 
 BaseLoggerFactory::BaseLoggerFactory(LogLevel level) : level(level) { };
 
@@ -54,7 +54,7 @@ LoggerFactory &Logging::LoggerLoader::load()
     std::string s(getenv("SERVER_LOGGER"));
     LoggerFactory* result = NULL;
     if (s == "file") {
-
+        result = new FileLoggerFactory(l, "testing.log");
     } else if (s == "stdout") {
         result = new StdoutLoggerFactory(l);
     }
@@ -65,9 +65,15 @@ Logging::FileLoggerFactory::FileLoggerFactory(LogLevel level, std::string filena
 
 Logger &Logging::FileLoggerFactory::getLogger(std::string name)
 {
-    return *(new FileLogger(this->level, this->filename));
+    return *(new FileLogger(this->level, name, this->filename));
 }
 
-Logging::FileLogger::FileLogger(LogLevel level, std::string name) : BaseLogger(level, name)
+void Logging::FileLogger::write(std::string entry)
 {
+    FILE* handler = fopen(this->filename.c_str(), "a+"); // open and close? well, multiple threads can access this, it's not a great solution
+    // better to use some semaphore here, or some other critical section protection
+    fprintf(handler, "%s", entry.c_str());
+    fclose(handler);
 }
+
+Logging::FileLogger::FileLogger(LogLevel level, std::string name, std::string filename) : BaseLogger(level, name), filename(filename) {}

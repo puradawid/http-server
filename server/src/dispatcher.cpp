@@ -14,7 +14,7 @@ void handle(Request& r, Handler& h, Connection& c) {
 
 Response ERROR = Response(Responses::RESP_500);
 
-Logging::Logger& DISPATCHER_LOG = Logging::LOG.getLogger("dispatcher");
+Logging::Logger& Dispatcher::LOG = Logging::LOG.getLogger("dispatcher");
 
 void Dispatcher::onOpenedConnection(Connection &conn)
 {
@@ -22,20 +22,22 @@ void Dispatcher::onOpenedConnection(Connection &conn)
         
     Continue c = true;
     try {
-        int attempts = 0;
+        // this section is hard logged in order to store the information about logging and also demo the use case of logger
+        Dispatcher::LOG.debug("Starting main loop for receiving the request");
         do {
+            Dispatcher::LOG.debug("Reading a chunk of data");
             MessageChunk chunk = conn.read();
-            if (chunk.message() == "" && attempts < 100) {
-                if (attempts < 100) {
-                    c = Continue(true);
-                    attempts++;
-                } else {
-                    c = Continue(false);
-                }
+            Dispatcher::LOG.debug("Chunk of data: " + chunk.message());
+            if (chunk.message() == "") {
+                Dispatcher::LOG.warn("Client has sent empty message?");
+                c = Continue("empty message sent");
             } else {
+                Dispatcher::LOG.debug("Sending the request for parser");
                 c = p.digest(chunk);
             }
         } while (c.continueProcessing);
+        
+        Dispatcher::LOG.debug("The incoming message processed with '" + c.errorMessage + "' error message");
 
         if (c.errorMessage != "") {
             conn.write(ERROR);
@@ -45,6 +47,7 @@ void Dispatcher::onOpenedConnection(Connection &conn)
         Request r = p.build();
 
         if (this->mHandlers.size() == 0) {
+            Dispatcher::LOG.error("There is no handlers to handle this request! Closing the connection.");
             conn.close();
             return;
         }
@@ -57,7 +60,7 @@ void Dispatcher::onOpenedConnection(Connection &conn)
         }
         handle(r, *(mHandlers.front()), conn); // execute default handler (first one)
     } catch (ConnectionError& e) {
-        DISPATCHER_LOG.error("Connection error!");
+        Dispatcher::LOG.warn("A connection error has occured. Closing connection");
         conn.close();
     }
 }

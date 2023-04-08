@@ -56,6 +56,8 @@ void TcpConnection::close() {
     ::close(this->newsockfd);;
 };
 
+Logging::Logger& TcpPortListener::LOG = Logging::LOG.getLogger("TcpPortListener");
+
 TcpPortListener::TcpPortListener(int port)
 {
     this->mPort = port;

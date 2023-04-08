@@ -65,10 +65,12 @@ namespace Logging {
     };
 
     class FileLogger : public BaseLogger {
+    private:
+        std::string filename;
     protected:
         void write(std::string entry);
     public:
-        FileLogger(LogLevel level, std::string name);
+        FileLogger(LogLevel level, std::string name, std::string filename);
     };
 
     class FileLoggerFactory : public BaseLoggerFactory {

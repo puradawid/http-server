@@ -13,6 +13,7 @@ public:
 
 class Dispatcher : public IncomingConnectionObserver {
 private:
+    static Logging::Logger& LOG;
     std::list<std::shared_ptr<Handler>> mHandlers;
 public:
     void add(std::shared_ptr<Handler> handler);

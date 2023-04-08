@@ -46,6 +46,7 @@ class PortListener {
 
 class TcpPortListener : public PortListener {
 private:
+    static Logging::Logger& LOG;
     int mPort;
     int mSockfd;
     std::thread* t;
