@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 #include <csignal>
+#include <cstdlib>
 
 Logging::Logger& LOG = Logging::LOG.getLogger("ExampleHandler");
 
@@ -20,12 +21,33 @@ public:
             resp.headers().addHeader(Header("X-For-Path", r.path()));
         }
 
-        resp.content("{}", "application/json");
+        resp.content("<html><h1>Hello my friend, this is your request</h1><p>" + r.content() + "</p></html>", "text/html");
 
         return resp;
     }
     bool test(Request& r) {
-        return true;
+        static const int EXTENSION_SIZE = 5; 
+        return r.path().rfind(".html") == r.path().size() - EXTENSION_SIZE;
+    }
+};
+
+class ExampleJSONHandler : public Handler {
+public:
+
+    Response handle(Request& r) {
+        LOG.debug("Handling request " + r.path());
+
+        Response resp(Responses::RESP_200);
+
+        resp.headers().addHeader(Header("Host", r.headers().find("Host").value()));
+
+        resp.content("{ path: \"" + r.path() + "\" }", "application/json");
+
+        return resp;
+    }
+    bool test(Request& r) {
+        static const int EXTENSION_SIZE = 5; 
+        return r.path().rfind(".json") == r.path().size() - EXTENSION_SIZE;
     }
 };
 
@@ -38,6 +60,7 @@ int main(int i, char** argv) {
 
     Server s(port);
     s.registerHandler(std::make_shared<ExampleHandler>());
+    s.registerHandler(std::make_shared<ExampleJSONHandler>());
 
     std::thread t(run, &s);
 

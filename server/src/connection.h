@@ -7,6 +7,8 @@
 #include "serializable.h"
 #include "logger.h"
 
+struct ConnectionError : public std::exception {};
+
 class Connection {
 public:
     virtual MessageChunk read() = 0;

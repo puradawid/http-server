@@ -29,7 +29,13 @@ MessageChunk TcpConnection::read()
     int n;
     n = ::read(this->newsockfd,buffer,512);
     TcpConnection::LOG.debug("Received " + std::to_string(n) + " characters");
-    if (n < 0) error("ERROR reading from socket");
+    if (n == 0) {
+        throw ConnectionError();
+    }
+    if (n < 0) {
+        TcpConnection::LOG.error("ERROR reading from socket");
+        throw ConnectionError();
+    }
     return MessageChunk(buffer, n);
 }
 
@@ -40,9 +46,9 @@ void TcpConnection::write(Serializable& s){
     
     if (res < 0) {
         error("Message hasn't been sent");
+        throw ConnectionError();
     }
 };
-
 
 void TcpConnection::close() {
     TcpConnection::LOG.debug("Closing connection");

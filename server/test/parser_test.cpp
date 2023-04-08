@@ -128,8 +128,8 @@ BOOST_AUTO_TEST_CASE(HeadersParsing)
 
 BOOST_AUTO_TEST_CASE(ContentParsing)
 {
-    HeadersChunk contentChunk(PreambleChunk("GET / HTTP\1.1\r\n\r\n", Method::GET, "/"), 
-        Headers(std::list<Header>({Header("Host", "test.com")})));
+    HeadersChunk contentChunk(PreambleChunk("my content\r\n", Method::GET, "/"), 
+        Headers(std::list<Header>({Header("Host", "test.com"), Header("Content-Length", "10")})));
 
     ContentParser parser;
 
@@ -137,8 +137,8 @@ BOOST_AUTO_TEST_CASE(ContentParsing)
 
     Request r = parser.build();
 
-    BOOST_TEST(r.contentLenght() == 2);
-    BOOST_TEST(r.content() == "{}");
+    BOOST_TEST(r.contentLenght() == 10);
+    BOOST_TEST(r.content() == "my content");
 }
 
 BOOST_AUTO_TEST_CASE(ParsingBodyWithContentLength)

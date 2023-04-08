@@ -41,5 +41,5 @@ void Message::content(std::string content, std::string contentType)
 
 std::string Message::content()
 {
-    return std::string();
+    return this->mContent;
 }

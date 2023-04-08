@@ -114,7 +114,7 @@ Continue HeadersParser::read(PreambleChunk chunk)
     this->method = chunk.method();
     this->path = chunk.path();
     std::string left = this->mCache.restore(chunk.message());
-    while (left != ENDL) 
+    while (left.rfind(ENDL, 0) == std::string::npos) 
     {
         std::string headerInput = left.substr(0, left.find(ENDL));
         std::smatch match;
@@ -133,14 +133,13 @@ Continue HeadersParser::read(PreambleChunk chunk)
         }
     }
 
-    if (left != ENDL) {
+    if (left.rfind(ENDL, 0) == std::string::npos) {
         this->mCache.store(left);
         return Continue(true);
     }
     this->done = true;
-    return this->mContentParser->digest(HeadersChunk(chunk, this->mHeaders));
+    return this->mContentParser->digest(HeadersChunk(PreambleChunk(left.substr(2), chunk.method(), chunk.path()), this->mHeaders));
 }
-
 
 Cache::Cache()
 {
@@ -175,9 +174,26 @@ Request ContentParser::construct()
 
 Continue ContentParser::read(HeadersChunk chunk)
 {
+    if (this->done) {
+        return Continue(false);
+    }
     this->mMethod = chunk.method();
     this->mPath = chunk.path();
     this->mHeaders = chunk.headers();
+
+    if (chunk.headers().contains("content-length")) {
+        Header cl = chunk.headers().find("content-length");
+        long unsigned int length = stoi(cl.value());
+        std::string message = mCache.restore(chunk.message());
+        if (message.length() >= length) {
+            this->done = true;
+            this->mContent = message.substr(0, length);
+            return Continue(false);
+        } else {
+            mCache.store(message);
+            return Continue(true);
+        }
+    }
 
     return Continue(false);
 }
