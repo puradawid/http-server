@@ -6,14 +6,16 @@
 class Message {
 protected:
     Headers mHeaders;
-    Message(Headers headers);
     std::string mContent;
+    Message(Headers headers);
+    Message(Headers headers, std::string content);
 public:
     Headers& headers();
     std::string host();
     void host(std::string host);
     int contentLenght();
     void content(std::string content, std::string contentType);
+    std::string content();
 };
 
 #endif

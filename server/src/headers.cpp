@@ -13,6 +13,13 @@ Headers::Headers()
     this->mHeaders = std::map<std::string, Header>();
 }
 
+Headers::Headers(std::list<Header> headers)
+{
+    for(Header header : headers) {
+        this->addHeader(header);
+    }
+}
+
 Header Headers::find(std::string name)
 {
     return this->mHeaders[tolower(name)];

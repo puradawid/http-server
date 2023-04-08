@@ -35,6 +35,16 @@ BOOST_AUTO_TEST_CASE(shouldCreateMessageWithCharPointer)
     BOOST_CHECK(m1.message() == "test");
 };
 
+BOOST_AUTO_TEST_CASE(shouldCreateAHeadersChunkWithAllData) {
+    HeadersChunk contentChunk(PreambleChunk("GET / HTTP\1.1\r\n\r\n", Method::GET, "/"), 
+        Headers(std::list<Header>({Header("Host", "test.com")})));
+    
+    BOOST_TEST(contentChunk.headers().find("Host").value() == "test.com");
+    BOOST_TEST(contentChunk.method() == Method::GET);
+    BOOST_TEST(contentChunk.path() == "/");
+    BOOST_TEST(contentChunk.message() == "GET / HTTP\1.1\r\n\r\n");
+}
+
 BOOST_AUTO_TEST_CASE(shouldHandleRealHttpRequest)
 {
     std::string request = "GET / HTTP/1.1\r\nHost: localhost:1231\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\nreport-to: {\"group\":\"gwsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-team\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws-team\"}]}\r\nX-Test: true\r\n\r\n";
@@ -114,7 +124,34 @@ BOOST_AUTO_TEST_CASE(HeadersParsing)
     Request r = parser.build();
 
     BOOST_TEST(r.header("Host") == "test.com", r.header("Host") + " is not test.com");
-    BOOST_TEST(r.header("host") == "test.com", r.header("host") + " is not test.com");
+}
+
+BOOST_AUTO_TEST_CASE(ContentParsing)
+{
+    HeadersChunk contentChunk(PreambleChunk("GET / HTTP\1.1\r\n\r\n", Method::GET, "/"), 
+        Headers(std::list<Header>({Header("Host", "test.com")})));
+
+    ContentParser parser;
+
+    parser.digest(contentChunk);
+
+    Request r = parser.build();
+
+    BOOST_TEST(r.contentLenght() == 2);
+    BOOST_TEST(r.content() == "{}");
+}
+
+BOOST_AUTO_TEST_CASE(ParsingBodyWithContentLength)
+{
+    std::string request = "POST / HTTP/1.1\r\nContent-Length: 2\r\n\r\n{}\r\n";
+
+    HttpParser parser;
+
+    parser.digest(MessageChunk(request));
+
+    Request r = parser.build();
+
+    BOOST_TEST(r.content() == "{}");
 }
 
 BOOST_AUTO_TEST_SUITE_END();

@@ -61,6 +61,10 @@ public:
     /// @brief creates empty collection of headers
     Headers();
 
+    /// @brief creates a headers collection with some initial elements
+    /// @param headers a list of headers
+    Headers(std::list<Header> headers);
+
     /// @brief returns an existing header
     /// @param name name of the header (case insensitive!)
     /// @return Header found or EMPTY_HEADER

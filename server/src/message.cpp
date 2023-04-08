@@ -4,6 +4,10 @@ Message::Message(Headers headers) : mHeaders(headers)
 {
 }
 
+Message::Message(Headers headers, std::string content) : mHeaders(headers), mContent(content)
+{
+}
+
 Headers& Message::headers()
 {
     return this->mHeaders;
@@ -33,4 +37,9 @@ void Message::content(std::string content, std::string contentType)
     this->mContent = content;
     this->mHeaders.addHeader(Header("Content-Length", std::to_string(content.length())));
     this->mHeaders.addHeader(Header("Content-Type", contentType));
+}
+
+std::string Message::content()
+{
+    return std::string();
 }
