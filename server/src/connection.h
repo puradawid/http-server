@@ -5,7 +5,7 @@
 #include <thread>
 #include "parser.h"
 #include "serializable.h"
-#include "logger.h"
+#include "log.h"
 
 struct ConnectionError : public std::exception {};
 

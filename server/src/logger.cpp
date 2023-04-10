@@ -1,6 +1,8 @@
 #include "logger.h"
 
 #include <iostream>
+#include <regex>
+#include <memory>
 
 using namespace Logging;
 
@@ -32,7 +34,7 @@ void BaseLogger::error(std::string message)
 
 Logging::BaseLogger::BaseLogger(LogLevel level, std::string name) : level(level), name(name) { }
 
-BaseLoggerFactory::BaseLoggerFactory(LogLevel level) : level(level) { };
+BaseLoggerFactory::BaseLoggerFactory(LogLevel level) : mLevel(level) { };
 
 void Logging::StdoutLogger::write(std::string entry)
 {
@@ -43,29 +45,16 @@ StdoutLogger::StdoutLogger(LogLevel level, std::string name) : BaseLogger(level,
 
 Logger& StdoutLoggerFactory::getLogger(std::string name)
 {
-    return *(new StdoutLogger(this->level, name));
+    return *(new StdoutLogger(this->mLevel, name));
 }
 
 StdoutLoggerFactory::StdoutLoggerFactory(LogLevel level): BaseLoggerFactory(level) {}; 
-
-LoggerFactory &Logging::LoggerLoader::load()
-{
-    LogLevel l = DEBUG;
-    std::string s(getenv("SERVER_LOGGER"));
-    LoggerFactory* result = NULL;
-    if (s == "file") {
-        result = new FileLoggerFactory(l, "testing.log");
-    } else if (s == "stdout") {
-        result = new StdoutLoggerFactory(l);
-    }
-    return *(result);
-}
 
 Logging::FileLoggerFactory::FileLoggerFactory(LogLevel level, std::string filename) : BaseLoggerFactory(level), filename(filename) { }
 
 Logger &Logging::FileLoggerFactory::getLogger(std::string name)
 {
-    return *(new FileLogger(this->level, name, this->filename));
+    return *(new FileLogger(this->mLevel, name, this->filename));
 }
 
 void Logging::FileLogger::write(std::string entry)
@@ -77,3 +66,33 @@ void Logging::FileLogger::write(std::string entry)
 }
 
 Logging::FileLogger::FileLogger(LogLevel level, std::string name, std::string filename) : BaseLogger(level, name), filename(filename) {}
+
+Logging::HybridLoggerFactory::HybridLoggerFactory(LogLevel level, 
+    std::list<std::pair<std::regex, std::shared_ptr<LoggerFactory>>> factories, LoggerFactory &defaultFactory) : 
+        BaseLoggerFactory(level), mFactories(factories), mDefaultFactory(defaultFactory)
+{
+}
+
+Logger &Logging::HybridLoggerFactory::getLogger(std::string name)
+{
+    std::shared_ptr<Logger> ptr;
+
+    if (this->mLoggers.find(name) != this->mLoggers.end()) {
+        return *(mLoggers.at(name));
+    }
+
+    for(std::pair<std::regex, std::shared_ptr<LoggerFactory>> entry : this->mFactories) {
+        std::smatch s;
+        std::regex_match(name, s, entry.first);
+
+        if (s.ready() && !s.empty()) {
+            ptr = std::shared_ptr<Logger>(&(entry.second->getLogger(name)));
+            this->mLoggers[name] = ptr;
+            return *ptr;
+        }
+    }
+
+    ptr = std::shared_ptr<Logger>(&(this->mDefaultFactory.getLogger(name)));
+    this->mLoggers[name] = ptr;
+    return *ptr;
+}

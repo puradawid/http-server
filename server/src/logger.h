@@ -2,19 +2,14 @@
 #define LOGGER_H
 
 #include <string>
+#include <regex>
+#include <memory>
+#include <list>
 
 namespace Logging {
 
     enum LogLevel {
         DEBUG, WARN, ERROR
-    };
-
-    class ConfigSource {
-
-    };
-
-    class Configuration {
-        LogLevel logLevel();
     };
 
     class Logger {
@@ -46,7 +41,7 @@ namespace Logging {
 
     class BaseLoggerFactory : public LoggerFactory {
     protected:
-        LogLevel level;
+        LogLevel mLevel;
     public:
         BaseLoggerFactory(LogLevel level);
     };
@@ -80,13 +75,19 @@ namespace Logging {
         FileLoggerFactory(LogLevel level, std::string filename);
         Logger& getLogger(std::string name);
     };
+    
+    typedef std::pair<std::regex, std::shared_ptr<LoggerFactory>> Factory;
+    typedef std::list<Factory> Factories;
 
-    class LoggerLoader {
+    class HybridLoggerFactory : public BaseLoggerFactory {
+    private:
+        std::map<std::string, std::shared_ptr<Logger>> mLoggers;
+        Factories mFactories;
+        LoggerFactory& mDefaultFactory;
     public:
-        static LoggerFactory& load();
+        HybridLoggerFactory(LogLevel level, std::list<std::pair<std::regex, std::shared_ptr<LoggerFactory>>> factories, LoggerFactory& defaultFactory);
+        Logger& getLogger(std::string name);
     };
-
-    static LoggerFactory& LOG = LoggerLoader::load();
 }
 
 #endif

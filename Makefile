@@ -29,7 +29,7 @@ all:	test
 	make $(TARGET)
 
 test: $(TEST_TARGET)
-	./unit_tests.a
+	SERVER_LOGGER=stdout ./unit_tests.a
 
 clean:
 	rm -f $(OBJS) $(TARGET) $(TEST_OBJS) $(TEST_TARGET) server.o
