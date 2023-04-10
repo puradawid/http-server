@@ -87,6 +87,8 @@ public:
     /// @return true if the header exists in the collection (so that find returns not EMPTY_HEADER value), false otherwise
     bool contains(std::string name);
 
+    /// @brief serializes headers to HTTP-like headers
+    /// @return a string, new-line separated of headers, like "Header1: value\nHeader2: value2"
     std::string serialize();
 };
 

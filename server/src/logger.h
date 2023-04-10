@@ -8,10 +8,12 @@
 
 namespace Logging {
 
+    /// @brief Level of logging
     enum LogLevel {
         DEBUG, WARN, ERROR
     };
 
+    /// @brief an interface that user code should interact with
     class Logger {
     public:
         virtual void debug(std::string message) = 0;
@@ -34,8 +36,12 @@ namespace Logging {
         void error(std::string message);
     };
 
+    /// @brief an interface that allows implementor to get a logger based on the name
     class LoggerFactory {
     public:
+        /// @brief creates a logger for specific name, it may return the same instance if invoked again
+        /// @param name name of the logger
+        /// @return a logger reference
         virtual Logger& getLogger(std::string name) = 0;
     };
 

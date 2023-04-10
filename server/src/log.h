@@ -31,6 +31,8 @@ namespace Logging {
         static LoggerFactory& load();
     };
 
+    /// @brief The overall factory of logging that is the root of all logging code. Use this in the classes:
+    /// @example static Logging::Logger LOG = Logging:LOG.getLogger("MyClassName");
     static LoggerFactory& LOG = LoggerLoader::load();
 }
 
