@@ -5,7 +5,6 @@
 #include<iostream>
 
 Server::Server(int port) {
-    std::cout << "Server started" << std::endl;
     this->port = port;
 };
 

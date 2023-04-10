@@ -5,6 +5,9 @@
 #include <csignal>
 #include <cstdlib>
 
+/// This is example client code - very simple server that responds with modified headers and different responses
+/// it can be tested in browser or cURL as well
+
 Logging::Logger& LOG = Logging::LOG.getLogger("ExampleHandler");
 
 class ExampleHandler : public Handler {
@@ -63,8 +66,6 @@ int main(int i, char** argv) {
     s.registerHandler(std::make_shared<ExampleJSONHandler>());
 
     std::thread t(run, &s);
-
-    std::cout << "Thread started" << std::endl;
 
     t.join();
 }

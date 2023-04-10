@@ -132,7 +132,6 @@ void TcpPortListener::listen()
 
 void TcpPortListener::close()
 {
-    std::cout << "Closing connection now" << std::endl;
     ::shutdown(this->mSockfd, SHUT_RD);
     ::close(this->mSockfd);
 }
